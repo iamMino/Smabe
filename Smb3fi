@@ -17,7 +17,7 @@ uiGlow.Thickness = 3
 
 local button = Instance.new("TextButton", frame)
 button.Size = UDim2.new(1, 0, 0.5, 0)
-button.Text = "ENABLE AUTO FARM"
+button.Text = "Enable?"
 button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
 button.TextColor3 = Color3.fromRGB(255, 50, 50)
 button.Font = Enum.Font.SourceSansBold
@@ -74,23 +74,23 @@ end
 -- Function to auto-farm
 local function autoFarm()
     while farming do
-        statusLabel.Text = "Status: Farming..."
+        statusLabel.Text = "SIYAHH, STRAIGHT UP"
         task.spawn(activateClickDetector)
         task.spawn(killBadTimeTrioBoss)
         task.wait(1)
     end
-    statusLabel.Text = "Status: Idle"
+    statusLabel.Text = "nothing.."
 end
 
 -- Toggle Button
 button.MouseButton1Click:Connect(function()
     farming = not farming
     if farming then
-        button.Text = "DISABLE AUTO FARM"
+        button.Text = "its over..."
         button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
         task.spawn(autoFarm) -- Start farming in a separate thread
     else
-        button.Text = "ENABLE AUTO FARM"
+        button.Text = "KILL THE TRIPLE APE BOSS"
         button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
     end
 end)
