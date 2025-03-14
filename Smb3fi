@@ -51,10 +51,7 @@ local function activateClickDetector()
             and workspace.Locations.LastCorridor.BadTimeSecret:FindFirstChild("bone")
         
         if clickDetector and clickDetector:IsA("ClickDetector") then
-            fireclickdetector(clickDetector) -- FIXED: Now correctly firing the ClickDetector
-            print("Clicked Bone ClickDetector!")
-        else
-            print("ClickDetector not found.")
+            fireclickdetector(clickDetector)
         end
         task.wait(0.5) -- Adjust timing if needed
     end
@@ -68,12 +65,7 @@ local function killBadTimeTrioBoss()
             local head = boss:FindFirstChild("Head")
             if head then
                 head:Destroy()
-                print("Killed BadTimeTrioBoss by removing the head!")
-            else
-                print("Head not found on BadTimeTrioBoss.")
             end
-        else
-            print("BadTimeTrioBoss not found, waiting for respawn...")
         end
         task.wait(1) -- Adjust delay if needed
     end
@@ -82,23 +74,23 @@ end
 -- Function to auto-farm
 local function autoFarm()
     while farming do
-        statusLabel.Text = "Status: SIYAHH, STRAIGHT UP"
+        statusLabel.Text = "Status: Farming..."
         task.spawn(activateClickDetector)
         task.spawn(killBadTimeTrioBoss)
         task.wait(1)
     end
-    statusLabel.Text = "Status: nothing.."
+    statusLabel.Text = "Status: Idle"
 end
 
 -- Toggle Button
 button.MouseButton1Click:Connect(function()
     farming = not farming
     if farming then
-        button.Text = "its over..."
+        button.Text = "DISABLE AUTO FARM"
         button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
         task.spawn(autoFarm) -- Start farming in a separate thread
     else
-        button.Text = "KILL THE TRIPLE APES BOSS"
+        button.Text = "ENABLE AUTO FARM"
         button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
     end
 end)
