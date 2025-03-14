@@ -1,4 +1,6 @@
 local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local farming = false
 
 -- UI Setup
 local screenGui = Instance.new("ScreenGui", game.CoreGui)
@@ -31,51 +33,64 @@ statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Font = Enum.Font.SourceSansBold
 statusLabel.TextSize = 16
 
-local farming = false
-
 button.MouseButton1Click:Connect(function()
     farming = not farming
     if farming then
         button.Text = "DISABLE AUTO FARM"
         button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-        statusLabel.Text = "Status: Farming"
-        task.spawn(autoFarm) -- Start the auto farm when enabled
+        autoFarm()
     else
         button.Text = "ENABLE AUTO FARM"
         button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
-        statusLabel.Text = "Status: Idle"
     end
 end)
 
--- Anti-AFK Script
+-- Anti-AFK
 local vu = game:GetService("VirtualUser")
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
     vu:CaptureController()
     vu:ClickButton2(Vector2.new())
 end)
 
--- Kill Script Function
-local function killNPCs()
-    while farming do
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:IsA("Humanoid") and obj.Parent.Name ~= player.Name then
-                obj.Health = 0
-            end
+-- Click Detectors Fix
+local function activateClickDetectors()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("ClickDetector") then
+            fireclickdetector(obj) -- Properly triggering ClickDetector
         end
-        task.wait(1) -- Adjust the wait time as needed
     end
 end
 
--- Auto Farm Function
+-- Kill NPCs Fix
+local function killBoss()
+    while farming do
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Humanoid") and obj.Parent:IsA("Model") and obj.Parent:FindFirstChild("HumanoidRootPart") then
+                if obj.Health > 0 then
+                    obj.Health = 0
+                end
+            end
+        end
+        task.wait(1) -- Prevents freezing
+    end
+end
+
+-- Auto Farm
 local function autoFarm()
     while farming do
-        -- Fire ClickDetectors
-        fireclickdetector(workspace.Locations.LastCorridor.BadTimeSecret.bone.ClickDetector)
-        fireclickdetector(workspace.Locations.NightmareArea.NightmareSecret.bone.ClickDetector)
+        statusLabel.Text = "Farming..."
         
-        -- Call the kill function
-        killNPCs()
+        -- Move to Character Box
+        if workspace:FindFirstChild("Lobby") and workspace.Lobby:FindFirstChild("Characters Room") then
+            local charRoom = workspace.Lobby["Characters Room"].StarterRoom.CharactersStarter.WeakMurder.Box.Display
+            player.Character:SetPrimaryPartCFrame(charRoom.CFrame)
+        end
+
+        task.wait(2) -- Delay before next action
         
-        task.wait(0.5) -- Adjust the wait time as needed
+        activateClickDetectors()
+        killBoss()
     end
+
+    statusLabel.Text = "Idle"
 end
