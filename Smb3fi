@@ -1,8 +1,7 @@
 local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local farming = false
+local runService = game:GetService("RunService")
 
--- UI Setup
+-- Create UI
 local screenGui = Instance.new("ScreenGui", game.CoreGui)
 local frame = Instance.new("Frame", screenGui)
 frame.Size = UDim2.new(0, 250, 0, 100)
@@ -10,7 +9,7 @@ frame.Position = UDim2.new(0.5, -125, 0.2, 0)
 frame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
 frame.BorderSizePixel = 2
 frame.Active = true
-frame.Draggable = true
+frame.Draggable = true -- Allow dragging
 
 local uiGlow = Instance.new("UIStroke", frame)
 uiGlow.Color = Color3.fromRGB(255, 0, 0)
@@ -33,64 +32,62 @@ statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Font = Enum.Font.SourceSansBold
 statusLabel.TextSize = 16
 
-button.MouseButton1Click:Connect(function()
-    farming = not farming
-    if farming then
-        button.Text = "DISABLE AUTO FARM"
-        button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-        autoFarm()
-    else
-        button.Text = "ENABLE AUTO FARM"
-        button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
-    end
-end)
+-- Variables
+local farming = false
 
--- Anti-AFK
+-- Anti-AFK Script
 local vu = game:GetService("VirtualUser")
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
     vu:CaptureController()
     vu:ClickButton2(Vector2.new())
 end)
 
--- Click Detectors Fix
+-- Function to activate ClickDetectors
 local function activateClickDetectors()
     for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("ClickDetector") then
-            fireclickdetector(obj) -- Properly triggering ClickDetector
+        if obj:IsA("ClickDetector") and obj.Parent and obj.Parent.Parent == workspace.BadTimeTrioBoss then
+            fireclickdetector(obj)
+            print("Activated ClickDetector:", obj.Parent.Name)
         end
     end
 end
 
--- Kill NPCs Fix
-local function killBoss()
-    while farming do
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:IsA("Humanoid") and obj.Parent:IsA("Model") and obj.Parent:FindFirstChild("HumanoidRootPart") then
-                if obj.Health > 0 then
-                    obj.Health = 0
-                end
-            end
+-- Function to kill BadTimeTrioBoss
+local function killBadTimeTrioBoss()
+    local boss = workspace:FindFirstChild("BadTimeTrioBoss")
+    if boss then
+        local head = boss:FindFirstChild("Head")
+        if head then
+            head:Destroy()
+            print("Killed BadTimeTrioBoss by removing the head!")
+        else
+            print("Head not found on BadTimeTrioBoss.")
         end
-        task.wait(1) -- Prevents freezing
+    else
+        print("BadTimeTrioBoss not found, waiting for respawn...")
     end
 end
 
--- Auto Farm
+-- Function to auto-farm
 local function autoFarm()
     while farming do
-        statusLabel.Text = "Farming..."
-        
-        -- Move to Character Box
-        if workspace:FindFirstChild("Lobby") and workspace.Lobby:FindFirstChild("Characters Room") then
-            local charRoom = workspace.Lobby["Characters Room"].StarterRoom.CharactersStarter.WeakMurder.Box.Display
-            player.Character:SetPrimaryPartCFrame(charRoom.CFrame)
-        end
-
-        task.wait(2) -- Delay before next action
-        
+        statusLabel.Text = "Status: Farming..."
         activateClickDetectors()
-        killBoss()
+        killBadTimeTrioBoss()
+        task.wait(1) -- Adjust delay if needed
     end
-
-    statusLabel.Text = "Idle"
+    statusLabel.Text = "Status: Idle"
 end
+
+-- Toggle Button
+button.MouseButton1Click:Connect(function()
+    farming = not farming
+    if farming then
+        button.Text = "DISABLE AUTO FARM"
+        button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+        task.spawn(autoFarm) -- Start farming in a separate thread
+    else
+        button.Text = "ENABLE AUTO FARM"
+        button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+    end
+end)
