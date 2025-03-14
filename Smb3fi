@@ -1,7 +1,6 @@
 local player = game.Players.LocalPlayer
-local runService = game:GetService("RunService")
 
--- Create UI
+-- UI Setup
 local screenGui = Instance.new("ScreenGui", game.CoreGui)
 local frame = Instance.new("Frame", screenGui)
 frame.Size = UDim2.new(0, 250, 0, 100)
@@ -9,7 +8,7 @@ frame.Position = UDim2.new(0.5, -125, 0.2, 0)
 frame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
 frame.BorderSizePixel = 2
 frame.Active = true
-frame.Draggable = true -- Allow dragging
+frame.Draggable = true
 
 local uiGlow = Instance.new("UIStroke", frame)
 uiGlow.Color = Color3.fromRGB(255, 0, 0)
@@ -17,7 +16,7 @@ uiGlow.Thickness = 3
 
 local button = Instance.new("TextButton", frame)
 button.Size = UDim2.new(1, 0, 0.5, 0)
-button.Text = "ENABLE AUTO FARM"
+button.Text = "KILL THE TRIPLE APES BOSS"
 button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
 button.TextColor3 = Color3.fromRGB(255, 50, 50)
 button.Font = Enum.Font.SourceSansBold
@@ -26,14 +25,27 @@ button.TextSize = 18
 local statusLabel = Instance.new("TextLabel", frame)
 statusLabel.Size = UDim2.new(1, 0, 0.5, 0)
 statusLabel.Position = UDim2.new(0, 0, 0.5, 0)
-statusLabel.Text = "Status: Idle"
+statusLabel.Text = "script off trent:sad"
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Font = Enum.Font.SourceSansBold
 statusLabel.TextSize = 16
 
--- Variables
 local farming = false
+local bossAlive = true
+local autoClickEnabled = false
+
+-- Button Logic
+button.MouseButton1Click:Connect(function()
+    farming = not farming
+    if farming then
+        button.Text = "Nvmmm.."
+        button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+    else
+        button.Text = "KILL THE TRIPLE APES BOSS"
+        button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+    end
+end)
 
 -- Anti-AFK Script
 local vu = game:GetService("VirtualUser")
@@ -42,44 +54,9 @@ game:GetService("Players").LocalPlayer.Idled:Connect(function()
     vu:ClickButton2(Vector2.new())
 end)
 
--- Function to detect and click the ClickDetector
-local function activateClickDetector()
-    while farming do
-        local clickDetector = workspace:FindFirstChild("Locations")
-            and workspace.Locations:FindFirstChild("LastCorridor")
-            and workspace.Locations.LastCorridor:FindFirstChild("BadTimeSecret")
-            and workspace.Locations.LastCorridor.BadTimeSecret:FindFirstChild("bone")
-
-        if clickDetector and clickDetector:IsA("ClickDetector") then
-            fireclickdetector(clickDetector)
-        end
-
-        task.wait(1) -- Wait to avoid excessive clicking
-    end
-end
-
--- Function to check if the player has been teleported to the boss fight
-local function waitForBossArena()
-    local lastPosition = player.Character and player.Character:GetPrimaryPartCFrame().Position or Vector3.new()
-    
-    while farming do
-        task.wait(1) -- Check every second
-
-        local newPosition = player.Character and player.Character:GetPrimaryPartCFrame().Position or Vector3.new()
-
-        if (newPosition - lastPosition).Magnitude > 10 then -- If position changes significantly
-            return true -- Teleportation detected
-        end
-
-        lastPosition = newPosition
-    end
-
-    return false
-end
-
--- Function to kill BadTimeTrioBoss
-local function killBadTimeTrioBoss()
-    while farming do
+-- Kill Script Function (Removing the boss's head to kill it)
+local function killBoss()
+    while bossAlive do
         local boss = workspace:FindFirstChild("BadTimeTrioBoss")
         if boss then
             local head = boss:FindFirstChild("Head")
@@ -87,35 +64,39 @@ local function killBadTimeTrioBoss()
                 head:Destroy()
             end
         end
-        task.wait(1) -- Check every second
+        task.wait(1) -- Adjust the wait time if necessary
     end
 end
 
--- Function to auto-farm
-local function autoFarm()
-    while farming do
-        statusLabel.Text = "Status: Clicking Detector..."
-        activateClickDetector() -- Click the teleport ClickDetector
-
-        if waitForBossArena() then
-            statusLabel.Text = "Status: Fighting Boss..."
-            task.spawn(killBadTimeTrioBoss)
+-- Auto Click Function (New Version)
+local function autoClick()
+    while autoClickEnabled do
+        local clickDetector = workspace.Locations.LastCorridor.BadTimeSecret:FindFirstChild("bone")
+        if clickDetector then
+            pcall(function()
+                fireclickdetector(clickDetector)
+            end)
         end
-
-        task.wait(2) -- Adjust delay if needed
+        task.wait(0.5) -- Adjust speed of the clicks
     end
-    statusLabel.Text = "Status: Idle"
 end
 
--- Toggle Button
+-- Loop to constantly check for auto click activation
+task.spawn(function()
+    while true do
+        if autoClickEnabled then
+            autoClick()
+        end
+        task.wait(0.1) -- Keeps the script running continuously
+    end
+end)
+
+-- Toggle Auto Click (based on button state)
 button.MouseButton1Click:Connect(function()
-    farming = not farming
-    if farming then
-        button.Text = "DISABLE AUTO FARM"
-        button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-        task.spawn(autoFarm) -- Start farming in a separate thread
+    autoClickEnabled = not autoClickEnabled
+    if autoClickEnabled then
+        statusLabel.Text = "SIYAHH, STRAIGHT UP"
     else
-        button.Text = "ENABLE AUTO FARM"
-        button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+        statusLabel.Text = "script off, trent:sad"
     end
 end)
