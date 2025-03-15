@@ -16,7 +16,7 @@ uiGlow.Thickness = 3
 
 local button = Instance.new("TextButton", frame)
 button.Size = UDim2.new(1, 0, 0.5, 0)
-button.Text = "ENABLE AUTO FARM"
+button.Text = "KILL THE TRIPLE APES BOSS"
 button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
 button.TextColor3 = Color3.fromRGB(255, 50, 50)
 button.Font = Enum.Font.SourceSansBold
@@ -25,7 +25,7 @@ button.TextSize = 18
 local statusLabel = Instance.new("TextLabel", frame)
 statusLabel.Size = UDim2.new(1, 0, 0.5, 0)
 statusLabel.Position = UDim2.new(0, 0, 0.5, 0)
-statusLabel.Text = "Status: Idle"
+statusLabel.Text = "script off trent:sad"
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Font = Enum.Font.SourceSansBold
@@ -34,15 +34,27 @@ statusLabel.TextSize = 16
 local farming = false
 local bossAlive = true
 
--- Button Logic
+-- Button Logic to Enable/Disable Auto Farm
 button.MouseButton1Click:Connect(function()
     farming = not farming
     if farming then
-        button.Text = "DISABLE AUTO FARM"
+        button.Text = "nvmm.. disable.."
         button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+        statusLabel.Text = "SIYAHH, STRAIGHT UP"
+        
+        -- Start Teleport and Kill Process
+        -- Check if the boss is already there and teleport and kill it
+        local boss = workspace:FindFirstChild("BadTimeTrioBoss")
+        if boss then
+            player.Character:SetPrimaryPartCFrame(boss.HumanoidRootPart.CFrame)
+            killBoss() -- Kill the boss immediately if it's already there
+        end
+        -- Start the loop for teleporting and killing the boss
+        teleportToBossAndKill()
     else
-        button.Text = "ENABLE AUTO FARM"
+        button.Text = "KILL THE TRIPLE APES BOSS"
         button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+        statusLabel.Text = "script off trent:sad"
     end
 end)
 
@@ -84,21 +96,3 @@ local function teleportToBossAndKill()
         task.wait(1) -- Adjust the loop delay as necessary
     end
 end
-
--- Start Auto Farming when enabled
-button.MouseButton1Click:Connect(function()
-    farming = not farming
-    if farming then
-        statusLabel.Text = "Status: Farming"
-        -- Check if the boss is already present and teleport to it, then kill it
-        local boss = workspace:FindFirstChild("BadTimeTrioBoss")
-        if boss then
-            player.Character:SetPrimaryPartCFrame(boss.HumanoidRootPart.CFrame)
-            killBoss() -- Kill the boss immediately if it's already there
-        end
-        -- Start teleporting to boss and killing it
-        teleportToBossAndKill()
-    else
-        statusLabel.Text = "Status: Idle"
-    end
-end)
