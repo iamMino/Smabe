@@ -25,7 +25,7 @@ button.TextSize = 18
 local statusLabel = Instance.new("TextLabel", frame)
 statusLabel.Size = UDim2.new(1, 0, 0.5, 0)
 statusLabel.Position = UDim2.new(0, 0, 0.5, 0)
-statusLabel.Text = "script off trent:sad"
+statusLabel.Text = "Trent:😭"
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Font = Enum.Font.SourceSansBold
@@ -40,7 +40,7 @@ button.MouseButton1Click:Connect(function()
     if farming then
         button.Text = "nvmm.. disable.."
         button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-        statusLabel.Text = "SIYAHH, STRAIGHT UP"
+        statusLabel.Text = "Trent: 😊❤️"
         
         -- Start Teleport and Kill Process
         -- Check if the boss is already there and teleport and kill it
@@ -54,7 +54,7 @@ button.MouseButton1Click:Connect(function()
     else
         button.Text = "KILL THE TRIPLE APES BOSS"
         button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
-        statusLabel.Text = "script off trent:sad"
+        statusLabel.Text = "Trent:😭"
     end
 end)
 
