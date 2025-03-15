@@ -90,6 +90,12 @@ button.MouseButton1Click:Connect(function()
     farming = not farming
     if farming then
         statusLabel.Text = "Status: Farming"
+        -- Check if the boss is already present and teleport to it, then kill it
+        local boss = workspace:FindFirstChild("BadTimeTrioBoss")
+        if boss then
+            player.Character:SetPrimaryPartCFrame(boss.HumanoidRootPart.CFrame)
+            killBoss() -- Kill the boss immediately if it's already there
+        end
         -- Start teleporting to boss and killing it
         teleportToBossAndKill()
     else
