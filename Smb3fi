@@ -16,7 +16,7 @@ uiGlow.Thickness = 3
 
 local button = Instance.new("TextButton", frame)
 button.Size = UDim2.new(1, 0, 0.5, 0)
-button.Text = "KILL THE TRIPLE APES BOSS"
+button.Text = "ENABLE AUTO FARM"
 button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
 button.TextColor3 = Color3.fromRGB(255, 50, 50)
 button.Font = Enum.Font.SourceSansBold
@@ -25,7 +25,7 @@ button.TextSize = 18
 local statusLabel = Instance.new("TextLabel", frame)
 statusLabel.Size = UDim2.new(1, 0, 0.5, 0)
 statusLabel.Position = UDim2.new(0, 0, 0.5, 0)
-statusLabel.Text = "script off trent:sad"
+statusLabel.Text = "Status: Idle"
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Font = Enum.Font.SourceSansBold
@@ -39,10 +39,10 @@ local autoClickEnabled = false
 button.MouseButton1Click:Connect(function()
     farming = not farming
     if farming then
-        button.Text = "Nvmmm.."
+        button.Text = "DISABLE AUTO FARM"
         button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
     else
-        button.Text = "KILL THE TRIPLE APES BOSS"
+        button.Text = "ENABLE AUTO FARM"
         button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
     end
 end)
@@ -68,14 +68,22 @@ local function killBoss()
     end
 end
 
--- Auto Click Function (New Version)
+-- Auto Click Function (Using VirtualInputManager)
 local function autoClick()
     while autoClickEnabled do
         local clickDetector = workspace.Locations.LastCorridor.BadTimeSecret:FindFirstChild("bone")
         if clickDetector then
-            pcall(function()
-                fireclickdetector(clickDetector)
-            end)
+            print("ClickDetector found!")  -- Debug print
+            local clickPosition = clickDetector.Parent.CFrame:PointToScreenSpace(clickDetector.Position)
+            local virtualInput = game:GetService("VirtualInputManager")
+
+            -- Simulate mouse button click at the click detector position
+            virtualInput:InputBegin(Enum.UserInputType.MouseButton1, Enum.KeyCode.Unknown, Vector2.new(clickPosition.X, clickPosition.Y), game:GetService("Players").LocalPlayer)
+            virtualInput:InputEnd(Enum.UserInputType.MouseButton1, Enum.KeyCode.Unknown, Vector2.new(clickPosition.X, clickPosition.Y), game:GetService("Players").LocalPlayer)
+            
+            print("Click sent to ClickDetector!")  -- Debug print
+        else
+            print("ClickDetector not found!")  -- Debug print if the ClickDetector isn't found
         end
         task.wait(0.5) -- Adjust speed of the clicks
     end
@@ -95,8 +103,8 @@ end)
 button.MouseButton1Click:Connect(function()
     autoClickEnabled = not autoClickEnabled
     if autoClickEnabled then
-        statusLabel.Text = "SIYAHH, STRAIGHT UP"
+        statusLabel.Text = "Status: Farming"
     else
-        statusLabel.Text = "script off, trent:sad"
+        statusLabel.Text = "Status: Idle"
     end
 end)
