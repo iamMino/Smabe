@@ -33,7 +33,6 @@ statusLabel.TextSize = 16
 
 local farming = false
 local bossAlive = true
-local autoClickEnabled = false
 
 -- Button Logic
 button.MouseButton1Click:Connect(function()
@@ -68,42 +67,31 @@ local function killBoss()
     end
 end
 
--- Auto Click Function (Using VirtualInputManager)
-local function autoClick()
-    while autoClickEnabled do
-        local clickDetector = workspace.Locations.LastCorridor.BadTimeSecret:FindFirstChild("bone")
-        if clickDetector then
-            print("ClickDetector found!")  -- Debug print
-            local clickPosition = clickDetector.Parent.CFrame:PointToScreenSpace(clickDetector.Position)
-            local virtualInput = game:GetService("VirtualInputManager")
-
-            -- Simulate mouse button click at the click detector position
-            virtualInput:InputBegin(Enum.UserInputType.MouseButton1, Enum.KeyCode.Unknown, Vector2.new(clickPosition.X, clickPosition.Y), game:GetService("Players").LocalPlayer)
-            virtualInput:InputEnd(Enum.UserInputType.MouseButton1, Enum.KeyCode.Unknown, Vector2.new(clickPosition.X, clickPosition.Y), game:GetService("Players").LocalPlayer)
+-- Teleport to Boss Function and kill it
+local function teleportToBossAndKill()
+    while farming do
+        -- Find the BadTimeTrioBoss in the workspace
+        local boss = workspace:FindFirstChild("BadTimeTrioBoss")
+        
+        if boss then
+            -- Teleport the player to the boss's position
+            player.Character:SetPrimaryPartCFrame(boss.HumanoidRootPart.CFrame)
             
-            print("Click sent to ClickDetector!")  -- Debug print
-        else
-            print("ClickDetector not found!")  -- Debug print if the ClickDetector isn't found
+            -- After teleporting, kill the boss (remove its head)
+            killBoss()
         end
-        task.wait(0.5) -- Adjust speed of the clicks
+        
+        task.wait(1) -- Adjust the loop delay as necessary
     end
 end
 
--- Loop to constantly check for auto click activation
-task.spawn(function()
-    while true do
-        if autoClickEnabled then
-            autoClick()
-        end
-        task.wait(0.1) -- Keeps the script running continuously
-    end
-end)
-
--- Toggle Auto Click (based on button state)
+-- Start Auto Farming when enabled
 button.MouseButton1Click:Connect(function()
-    autoClickEnabled = not autoClickEnabled
-    if autoClickEnabled then
+    farming = not farming
+    if farming then
         statusLabel.Text = "Status: Farming"
+        -- Start teleporting to boss and killing it
+        teleportToBossAndKill()
     else
         statusLabel.Text = "Status: Idle"
     end
