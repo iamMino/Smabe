@@ -16,7 +16,7 @@ uiGlow.Thickness = 3
 
 local button = Instance.new("TextButton", frame)
 button.Size = UDim2.new(1, 0, 0.5, 0)
-button.Text = "Off rn.."
+button.Text = "Off rn..."
 button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
 button.TextColor3 = Color3.fromRGB(255, 50, 50)
 button.Font = Enum.Font.SourceSansBold
@@ -33,55 +33,57 @@ statusLabel.TextSize = 16
 
 local farming = false
 
--- Button Logic for Enable/Disable Auto Farm
+-- Button click toggle
 button.MouseButton1Click:Connect(function()
     farming = not farming
     if farming then
-        button.Text = "KILLING THE TRIPLE APES BOSS RN!"
+        button.Text = "KILLING THE TRIPLE APES FINALLY"
         button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
         statusLabel.Text = "Trent:😊"
-        teleportToBossAndKill()
+        teleportToBossAndKill()  -- Start the teleporting and killing loop
     else
-        button.Text = "Off rn.."
+        button.Text = "Off rn..."
         button.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
         statusLabel.Text = "Trent:😭"
     end
 end)
 
--- Anti-AFK Script
+-- Anti-AFK script
 local vu = game:GetService("VirtualUser")
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
     vu:CaptureController()
     vu:ClickButton2(Vector2.new())
 end)
 
--- Function to Kill Boss (Remove Head)
-local function killBoss()
-    local boss = workspace:FindFirstChild("BadTimeTrioBoss")
-    if boss and boss:FindFirstChild("Char") and boss.Char:FindFirstChild("Head") then
-        boss.Char.Head:Destroy()
-    end
-end
-
--- Function to Teleport and Kill the Boss
+-- Function to teleport to boss and kill it
 local function teleportToBossAndKill()
+    print("[Script] Auto-farm started...")
+
     while farming do
         local boss
         repeat
+            print("[Script] Checking for BadTimeTrioBoss in workspace...")
             boss = workspace:FindFirstChild("BadTimeTrioBoss")
-            task.wait(0.5) -- Keeps checking until the boss appears
+            task.wait(0.5)
         until boss and boss:FindFirstChild("Char") and boss.Char:FindFirstChild("Head")
 
-        -- Teleport to the boss's head
-        local head = boss.Char.Head
+        print("[Script] Boss detected!")
+
+        local head = boss.Char:FindFirstChild("Head")
         if head then
-            player.Character:SetPrimaryPartCFrame(head.CFrame)
+            print("[Script] Head found, teleporting...")
+            local char = game.Players.LocalPlayer.Character
+            if char and char.PrimaryPart then
+                char:PivotTo(head.CFrame + Vector3.new(0, 3, 0))
+            end
         end
 
-        -- Kill the boss by destroying its head
         task.wait(0.5)
-        killBoss()
+        if head then
+            print("[Script] Destroying head!")
+            head:Destroy()
+        end
 
-        task.wait(1) -- Adjust this delay as needed
+        task.wait(1)
     end
 end
