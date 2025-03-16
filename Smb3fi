@@ -29,13 +29,13 @@ local function loadState()
     return false
 end
 
--- UI Setup
+-- UI Setup (keeping the original look and colors)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = game.CoreGui
 local Frame = Instance.new("Frame")
 Frame.Size = UDim2.new(0, 250, 0, 100)
 Frame.Position = UDim2.new(0.5, -125, 0.1, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 90) -- **Deep Blue Background**
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 90) -- Deep Blue Background
 Frame.Parent = ScreenGui
 local UICorner = Instance.new("UICorner", Frame) -- Rounded corners
 
@@ -43,7 +43,7 @@ local UICorner = Instance.new("UICorner", Frame) -- Rounded corners
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 200, 0, 50)
 ToggleButton.Position = UDim2.new(0.5, -100, 0.25, 0)
-ToggleButton.BackgroundColor3 = loadState() and Color3.fromRGB(180, 0, 180) or Color3.fromRGB(90, 0, 180) -- **Purple**
+ToggleButton.BackgroundColor3 = loadState() and Color3.fromRGB(180, 0, 180) or Color3.fromRGB(90, 0, 180) -- Purple
 ToggleButton.Text = loadState() and "Stop Autofarm" or "Start Autofarm"
 ToggleButton.TextSize = 20
 ToggleButton.Parent = Frame
@@ -68,12 +68,12 @@ local function startAutoFarm()
         local boss = workspace:FindFirstChild("BadTimeTrioBoss")
         if boss and boss:FindFirstChild("Char") and boss.Char:FindFirstChild("Head") then
             local head = boss.Char.Head
-            local originalCFrame = Player.Character.HumanoidRootPart.CFrame -- **Save position**
-            Player.Character.HumanoidRootPart.CFrame = head.CFrame -- **Teleport to boss**
+            local originalCFrame = Player.Character.HumanoidRootPart.CFrame -- Save position
+            Player.Character.HumanoidRootPart.CFrame = head.CFrame -- Teleport to boss
             task.wait(0.5)
-            head:Destroy() -- **Kill boss**
+            head:Destroy() -- Kill boss
             task.wait(1)
-            Player.Character.HumanoidRootPart.CFrame = originalCFrame -- **Return to original position**
+            Player.Character.HumanoidRootPart.CFrame = originalCFrame -- Return to original position
         end
         task.wait(1)
     end
@@ -83,7 +83,7 @@ end
 ToggleButton.MouseButton1Click:Connect(function()
     local autoFarmEnabled = not loadState()
     ToggleButton.Text = autoFarmEnabled and "Stop Autofarm" or "Start Autofarm"
-    ToggleButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(180, 0, 180) or Color3.fromRGB(90, 0, 180) -- **Purple colors**
+    ToggleButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(180, 0, 180) or Color3.fromRGB(90, 0, 180) -- Purple colors
     saveState(autoFarmEnabled)
 
     if autoFarmEnabled then
