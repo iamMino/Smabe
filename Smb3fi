@@ -1,4 +1,23 @@
 local player = game.Players.LocalPlayer
+local dataStoreKey = "BossFarmState_" .. player.UserId  -- Unique key for each player
+
+-- Function to get or create a BoolValue in ReplicatedStorage
+local function getOrCreateBool(name, default)
+    local storage = game:GetService("ReplicatedStorage")
+    local boolValue = storage:FindFirstChild(name)
+
+    if not boolValue then
+        boolValue = Instance.new("BoolValue")
+        boolValue.Name = name
+        boolValue.Parent = storage
+        boolValue.Value = default
+    end
+
+    return boolValue
+end
+
+-- Get or create the saved farm state
+local farmState = getOrCreateBool(dataStoreKey, false)
 
 -- UI Setup
 local screenGui = Instance.new("ScreenGui", game.CoreGui)
@@ -33,58 +52,52 @@ statusLabel.Font = Enum.Font.SourceSansBold
 statusLabel.TextSize = 16
 statusLabel.Parent = frame
 
-local farming = false
-local originalPosition = player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart.CFrame
-
--- Anti-AFK Script
-local vu = game:GetService("VirtualUser")
-game:GetService("Players").LocalPlayer.Idled:Connect(function()
-    vu:CaptureController()
-    vu:ClickButton2(Vector2.new())
-end)
+local farming = farmState.Value
 
 -- Function to Find the Head
 local function findBossHead(boss)
-    if not boss then return nil end  -- If boss doesn't exist, return nil
+    if not boss then return nil end
 
     for _, descendant in pairs(boss:GetDescendants()) do
         if descendant:IsA("BasePart") and string.lower(descendant.Name):find("head") then
             return descendant
         end
     end
-    return nil  -- No head found
+    return nil
 end
 
 -- Function to Teleport, Kill Boss, and Repeat
 local function teleportAndKillLoop()
     while farming do
         local boss = workspace:FindFirstChild("BadTimeTrioBoss")
-        
+
         if boss then
             local head = findBossHead(boss)
 
             if head then
-                -- Keep teleporting to the boss until the head is deleted
                 player.Character:SetPrimaryPartCFrame(head.CFrame) -- Teleport to boss head
-                task.wait(0.5) -- Wait for a short time before checking again
-                if head.Parent then
-                    head:Destroy() -- Kill the boss
+                task.wait(1)
+                head:Destroy()
+                
+                -- Wait for the boss to fully despawn before teleporting back
+                while workspace:FindFirstChild("BadTimeTrioBoss") do
+                    task.wait(0.5)
+                end
+
+                -- Return to the original position after killing
+                if originalPosition then
+                    player.Character:SetPrimaryPartCFrame(originalPosition)
                 end
             end
-
-            -- If the head is destroyed, teleport back to the original position
-            if not boss:FindFirstChild("head") then
-                player.Character:SetPrimaryPartCFrame(originalPosition)
-                break -- Exit the loop once the boss is dead and player is back
-            end
         end
-        task.wait(1) -- Wait before the next check
+        task.wait(1)
     end
 end
 
 -- Button Toggle Auto Farm
 button.MouseButton1Click:Connect(function()
     farming = not farming
+    farmState.Value = farming  -- Save state
 
     if farming then
         button.Text = "DISABLE AUTO FARM"
@@ -97,3 +110,8 @@ button.MouseButton1Click:Connect(function()
         statusLabel.Text = "Status: Idle"
     end
 end)
+
+-- Auto-Enable Farming if it was enabled before leaving
+if farming then
+    task.spawn(teleportAndKillLoop)
+end
