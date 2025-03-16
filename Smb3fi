@@ -1,26 +1,33 @@
 local HttpService = game:GetService("HttpService")
 local Player = game:GetService("Players").LocalPlayer
-local DataStoreKey = "BossFarmEnabled"
 local VirtualUser = game:GetService("VirtualUser")
 
--- Function to save autofarm state
+-- Function to save the state locally (avoiding issues with sethiddenproperty)
 local function saveState(enabled)
-    if sethiddenproperty then
-        sethiddenproperty(game, DataStoreKey, enabled and "true" or "false")
+    local playerData = Player:FindFirstChild("PlayerData")
+    if not playerData then
+        playerData = Instance.new("Folder")
+        playerData.Name = "PlayerData"
+        playerData.Parent = Player
     end
+
+    local stateValue = Instance.new("StringValue")
+    stateValue.Name = "BossFarmEnabled"
+    stateValue.Value = enabled and "true" or "false"
+    stateValue.Parent = playerData
 end
 
--- Function to load saved state
+-- Function to load the saved state
 local function loadState()
-    if gethiddenproperty then
-        local savedState = gethiddenproperty(game, DataStoreKey)
-        return savedState == "true"
+    local playerData = Player:FindFirstChild("PlayerData")
+    if playerData then
+        local stateValue = playerData:FindFirstChild("BossFarmEnabled")
+        if stateValue and stateValue.Value == "true" then
+            return true
+        end
     end
     return false
 end
-
--- Load previous state on join
-local autoFarmEnabled = loadState()
 
 -- UI Setup
 local ScreenGui = Instance.new("ScreenGui")
@@ -36,26 +43,28 @@ local UICorner = Instance.new("UICorner", Frame) -- Rounded corners
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 200, 0, 50)
 ToggleButton.Position = UDim2.new(0.5, -100, 0.25, 0)
-ToggleButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(180, 0, 180) or Color3.fromRGB(90, 0, 180) -- **Purple**
-ToggleButton.Text = autoFarmEnabled and "Stop Autofarm" or "Start Autofarm"
+ToggleButton.BackgroundColor3 = loadState() and Color3.fromRGB(180, 0, 180) or Color3.fromRGB(90, 0, 180) -- **Purple**
+ToggleButton.Text = loadState() and "Stop Autofarm" or "Start Autofarm"
 ToggleButton.TextSize = 20
 ToggleButton.Parent = Frame
 local ButtonCorner = Instance.new("UICorner", ToggleButton)
 
 -- Anti-AFK Loop
 local function antiAFK()
-    while autoFarmEnabled do
-        game:GetService("Players").LocalPlayer.Idled:connect(function()
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton1(Vector2.new()) -- Simulate mouse activity to prevent AFK kick
-        end)
+    while true do
+        if loadState() then
+            game:GetService("Players").LocalPlayer.Idled:connect(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton1(Vector2.new()) -- Simulate mouse activity to prevent AFK kick
+            end)
+        end
         task.wait(5) -- Delay between AFK checks
     end
 end
 
 -- Autofarm Function
 local function startAutoFarm()
-    while autoFarmEnabled do
+    while loadState() do
         local boss = workspace:FindFirstChild("BadTimeTrioBoss")
         if boss and boss:FindFirstChild("Char") and boss.Char:FindFirstChild("Head") then
             local head = boss.Char.Head
@@ -72,7 +81,7 @@ end
 
 -- Toggle Autofarm on button click
 ToggleButton.MouseButton1Click:Connect(function()
-    autoFarmEnabled = not autoFarmEnabled
+    local autoFarmEnabled = not loadState()
     ToggleButton.Text = autoFarmEnabled and "Stop Autofarm" or "Start Autofarm"
     ToggleButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(180, 0, 180) or Color3.fromRGB(90, 0, 180) -- **Purple colors**
     saveState(autoFarmEnabled)
@@ -83,7 +92,7 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 -- Start autofarm and anti-AFK if enabled previously
-if autoFarmEnabled then
+if loadState() then
     startAutoFarm()
     antiAFK()
 end
