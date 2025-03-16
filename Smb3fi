@@ -1,95 +1,89 @@
-local player = game.Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
+local Player = game:GetService("Players").LocalPlayer
+local DataStoreKey = "BossFarmEnabled"
+local VirtualUser = game:GetService("VirtualUser")
 
--- UI Setup
-local screenGui = Instance.new("ScreenGui", game.CoreGui)
-local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 250, 0, 100)
-frame.Position = UDim2.new(0.5, -125, 0.2, 0)
-frame.BackgroundColor3 = Color3.fromRGB(50, 0, 100) -- Purple
-frame.BorderSizePixel = 2
-frame.Active = true
-frame.Draggable = true
-
-local uiGlow = Instance.new("UIStroke", frame)
-uiGlow.Color = Color3.fromRGB(0, 255, 255) -- Blue
-uiGlow.Thickness = 3
-
-local button = Instance.new("TextButton", frame)
-button.Size = UDim2.new(1, 0, 0.5, 0)
-button.Text = "ENABLE AUTO FARM"
-button.BackgroundColor3 = Color3.fromRGB(0, 50, 100) -- Dark Blue
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Font = Enum.Font.SourceSansBold
-button.TextSize = 18
-
-local statusLabel = Instance.new("TextLabel", frame)
-statusLabel.Size = UDim2.new(1, 0, 0.5, 0)
-statusLabel.Position = UDim2.new(0, 0, 0.5, 0)
-statusLabel.Text = "Status: Idle"
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-statusLabel.Font = Enum.Font.SourceSansBold
-statusLabel.TextSize = 16
-
-local farming = false
-
-button.MouseButton1Click:Connect(function()
-    farming = not farming
-    if farming then
-        button.Text = "DISABLE AUTO FARM"
-        button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-        statusLabel.Text = "Status: Farming..."
-    else
-        button.Text = "ENABLE AUTO FARM"
-        button.BackgroundColor3 = Color3.fromRGB(0, 50, 100)
-        statusLabel.Text = "Status: Idle"
-    end
-end)
-
--- Anti-AFK Script
-local vu = game:GetService("VirtualUser")
-game:GetService("Players").LocalPlayer.Idled:Connect(function()
-    vu:CaptureController()
-    vu:ClickButton2(Vector2.new())
-end)
-
--- Kill Boss Function
-local function killBoss()
-    while farming do
-        local boss = workspace:FindFirstChild("BadTimeTrioBoss")
-        
-        if boss then
-            local head = boss:FindFirstChild("Char") and boss.Char:FindFirstChild("Head")
-            
-            if head then
-                -- Save the player's original position before teleporting
-                local originalPosition = player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart.CFrame
-                
-                -- Teleport to the boss
-                player.Character:SetPrimaryPartCFrame(head.CFrame)
-                task.wait(0.5) -- Small delay
-                
-                -- Destroy the head
-                head:Destroy()
-                
-                -- Teleport back to original position
-                if originalPosition then
-                    task.wait(0.2) -- Short delay before teleporting back
-                    player.Character:SetPrimaryPartCFrame(originalPosition)
-                end
-            end
-        end
-        
-        task.wait(1) -- Wait before checking again
+-- Function to save autofarm state
+local function saveState(enabled)
+    if sethiddenproperty then
+        sethiddenproperty(game, DataStoreKey, enabled and "true" or "false")
     end
 end
 
--- Auto Farm Loop
-task.spawn(function()
-    while true do
-        if farming then
-            killBoss()
+-- Function to load saved state
+local function loadState()
+    if gethiddenproperty then
+        local savedState = gethiddenproperty(game, DataStoreKey)
+        return savedState == "true"
+    end
+    return false
+end
+
+-- Load previous state on join
+local autoFarmEnabled = loadState()
+
+-- UI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.CoreGui
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 250, 0, 100)
+Frame.Position = UDim2.new(0.5, -125, 0.1, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 90) -- **Deep Blue Background**
+Frame.Parent = ScreenGui
+local UICorner = Instance.new("UICorner", Frame) -- Rounded corners
+
+-- Toggle Button
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 200, 0, 50)
+ToggleButton.Position = UDim2.new(0.5, -100, 0.25, 0)
+ToggleButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(180, 0, 180) or Color3.fromRGB(90, 0, 180) -- **Purple**
+ToggleButton.Text = autoFarmEnabled and "Stop Autofarm" or "Start Autofarm"
+ToggleButton.TextSize = 20
+ToggleButton.Parent = Frame
+local ButtonCorner = Instance.new("UICorner", ToggleButton)
+
+-- Anti-AFK Loop
+local function antiAFK()
+    while autoFarmEnabled do
+        game:GetService("Players").LocalPlayer.Idled:connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton1(Vector2.new()) -- Simulate mouse activity to prevent AFK kick
+        end)
+        task.wait(5) -- Delay between AFK checks
+    end
+end
+
+-- Autofarm Function
+local function startAutoFarm()
+    while autoFarmEnabled do
+        local boss = workspace:FindFirstChild("BadTimeTrioBoss")
+        if boss and boss:FindFirstChild("Char") and boss.Char:FindFirstChild("Head") then
+            local head = boss.Char.Head
+            local originalCFrame = Player.Character.HumanoidRootPart.CFrame -- **Save position**
+            Player.Character.HumanoidRootPart.CFrame = head.CFrame -- **Teleport to boss**
+            task.wait(0.5)
+            head:Destroy() -- **Kill boss**
+            task.wait(1)
+            Player.Character.HumanoidRootPart.CFrame = originalCFrame -- **Return to original position**
         end
-        task.wait(1) -- Avoid high CPU usage
+        task.wait(1)
+    end
+end
+
+-- Toggle Autofarm on button click
+ToggleButton.MouseButton1Click:Connect(function()
+    autoFarmEnabled = not autoFarmEnabled
+    ToggleButton.Text = autoFarmEnabled and "Stop Autofarm" or "Start Autofarm"
+    ToggleButton.BackgroundColor3 = autoFarmEnabled and Color3.fromRGB(180, 0, 180) or Color3.fromRGB(90, 0, 180) -- **Purple colors**
+    saveState(autoFarmEnabled)
+
+    if autoFarmEnabled then
+        startAutoFarm()
     end
 end)
+
+-- Start autofarm and anti-AFK if enabled previously
+if autoFarmEnabled then
+    startAutoFarm()
+    antiAFK()
+end
