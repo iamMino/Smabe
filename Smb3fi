@@ -1,5 +1,4 @@
 local player = game.Players.LocalPlayer
-local originalPosition = player.Character.HumanoidRootPart.CFrame  -- Store original position
 
 -- UI Setup
 local screenGui = Instance.new("ScreenGui", game.CoreGui)
@@ -35,6 +34,7 @@ statusLabel.TextSize = 16
 statusLabel.Parent = frame
 
 local farming = false
+local originalPosition = player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart.CFrame
 
 -- Anti-AFK Script
 local vu = game:GetService("VirtualUser")
@@ -64,45 +64,27 @@ local function teleportAndKillLoop()
             local head = findBossHead(boss)
 
             if head then
+                -- Keep teleporting to the boss until the head is deleted
                 player.Character:SetPrimaryPartCFrame(head.CFrame) -- Teleport to boss head
-                task.wait(1) -- Short delay before deleting
-                head:Destroy() -- Kill the boss
+                task.wait(0.5) -- Wait for a short time before checking again
+                if head.Parent then
+                    head:Destroy() -- Kill the boss
+                end
+            end
 
-                -- After killing the boss, teleport back to original position
-                player.Character:SetPrimaryPartCFrame(originalPosition) 
+            -- If the head is destroyed, teleport back to the original position
+            if not boss:FindFirstChild("head") then
+                player.Character:SetPrimaryPartCFrame(originalPosition)
+                break -- Exit the loop once the boss is dead and player is back
             end
         end
-        task.wait(1) -- Wait before next check
+        task.wait(1) -- Wait before the next check
     end
-end
-
--- Save State to keep the farm enabled after rejoining
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local autoFarmEnabled = replicatedStorage:FindFirstChild("AutoFarmEnabled")
-
-if not autoFarmEnabled then
-    autoFarmEnabled = Instance.new("BoolValue")
-    autoFarmEnabled.Name = "AutoFarmEnabled"
-    autoFarmEnabled.Parent = replicatedStorage
-end
-
--- Set initial UI state based on saved state
-if autoFarmEnabled.Value then
-    farming = true
-    button.Text = "DISABLE AUTO FARM"
-    button.BackgroundColor3 = Color3.fromRGB(120, 50, 255) -- Purple Button
-    statusLabel.Text = "Status: Farming"
-else
-    farming = false
-    button.Text = "ENABLE AUTO FARM"
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 150) -- Deep Blue Button
-    statusLabel.Text = "Status: Idle"
 end
 
 -- Button Toggle Auto Farm
 button.MouseButton1Click:Connect(function()
     farming = not farming
-    autoFarmEnabled.Value = farming  -- Save state when toggled
 
     if farming then
         button.Text = "DISABLE AUTO FARM"
