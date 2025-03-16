@@ -5,35 +5,46 @@ local screenGui = Instance.new("ScreenGui", game.CoreGui)
 local frame = Instance.new("Frame", screenGui)
 frame.Size = UDim2.new(0, 250, 0, 100)
 frame.Position = UDim2.new(0.5, -125, 0.2, 0)
-frame.BackgroundColor3 = Color3.fromRGB(20, 10, 30) -- Dark Purple Background
+frame.BackgroundColor3 = Color3.fromRGB(50, 0, 100) -- Purple
 frame.BorderSizePixel = 2
 frame.Active = true
 frame.Draggable = true
 
 local uiGlow = Instance.new("UIStroke", frame)
-uiGlow.Color = Color3.fromRGB(100, 50, 255) -- Neon Blue Glow
+uiGlow.Color = Color3.fromRGB(0, 255, 255) -- Blue
 uiGlow.Thickness = 3
 
 local button = Instance.new("TextButton", frame)
 button.Size = UDim2.new(1, 0, 0.5, 0)
 button.Text = "ENABLE AUTO FARM"
-button.BackgroundColor3 = Color3.fromRGB(50, 50, 150) -- Deep Blue Button
-button.TextColor3 = Color3.fromRGB(180, 100, 255) -- Light Purple Text
+button.BackgroundColor3 = Color3.fromRGB(0, 50, 100) -- Dark Blue
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
 button.Font = Enum.Font.SourceSansBold
 button.TextSize = 18
-button.Parent = frame
 
 local statusLabel = Instance.new("TextLabel", frame)
 statusLabel.Size = UDim2.new(1, 0, 0.5, 0)
 statusLabel.Position = UDim2.new(0, 0, 0.5, 0)
 statusLabel.Text = "Status: Idle"
 statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(200, 150, 255) -- Light Purple Text
+statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Font = Enum.Font.SourceSansBold
 statusLabel.TextSize = 16
-statusLabel.Parent = frame
 
 local farming = false
+
+button.MouseButton1Click:Connect(function()
+    farming = not farming
+    if farming then
+        button.Text = "DISABLE AUTO FARM"
+        button.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+        statusLabel.Text = "Status: Farming..."
+    else
+        button.Text = "ENABLE AUTO FARM"
+        button.BackgroundColor3 = Color3.fromRGB(0, 50, 100)
+        statusLabel.Text = "Status: Idle"
+    end
+end)
 
 -- Anti-AFK Script
 local vu = game:GetService("VirtualUser")
@@ -42,48 +53,43 @@ game:GetService("Players").LocalPlayer.Idled:Connect(function()
     vu:ClickButton2(Vector2.new())
 end)
 
--- Function to Find the Head
-local function findBossHead(boss)
-    if not boss then return nil end  -- If boss doesn't exist, return nil
-
-    for _, descendant in pairs(boss:GetDescendants()) do
-        if descendant:IsA("BasePart") and string.lower(descendant.Name):find("head") then
-            return descendant
-        end
-    end
-    return nil  -- No head found
-end
-
--- Function to Teleport, Kill Boss, and Repeat
-local function teleportAndKillLoop()
+-- Kill Boss Function
+local function killBoss()
     while farming do
         local boss = workspace:FindFirstChild("BadTimeTrioBoss")
         
         if boss then
-            local head = findBossHead(boss)
-
+            local head = boss:FindFirstChild("Char") and boss.Char:FindFirstChild("Head")
+            
             if head then
-                player.Character:SetPrimaryPartCFrame(head.CFrame) -- Teleport to boss head
-                task.wait(1) -- Short delay before deleting
-                head:Destroy() -- Kill the boss
+                -- Save the player's original position before teleporting
+                local originalPosition = player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart.CFrame
+                
+                -- Teleport to the boss
+                player.Character:SetPrimaryPartCFrame(head.CFrame)
+                task.wait(0.5) -- Small delay
+                
+                -- Destroy the head
+                head:Destroy()
+                
+                -- Teleport back to original position
+                if originalPosition then
+                    task.wait(0.2) -- Short delay before teleporting back
+                    player.Character:SetPrimaryPartCFrame(originalPosition)
+                end
             end
         end
-        task.wait(1) -- Wait before next check
+        
+        task.wait(1) -- Wait before checking again
     end
 end
 
--- Button Toggle Auto Farm
-button.MouseButton1Click:Connect(function()
-    farming = not farming
-
-    if farming then
-        button.Text = "DISABLE AUTO FARM"
-        button.BackgroundColor3 = Color3.fromRGB(120, 50, 255) -- Purple Button
-        statusLabel.Text = "Status: Farming"
-        task.spawn(teleportAndKillLoop)
-    else
-        button.Text = "ENABLE AUTO FARM"
-        button.BackgroundColor3 = Color3.fromRGB(50, 50, 150) -- Deep Blue Button
-        statusLabel.Text = "Status: Idle"
+-- Auto Farm Loop
+task.spawn(function()
+    while true do
+        if farming then
+            killBoss()
+        end
+        task.wait(1) -- Avoid high CPU usage
     end
 end)
