@@ -1,22 +1,13 @@
 local player = game.Players.LocalPlayer
-local dataStoreKey = "BossFarmState_" .. player.UserId  -- Unique save key
+local dataStoreService = game:GetService("DataStoreService")
+local farmDataStore = dataStoreService:GetDataStore("BossFarmState") -- Global save store
 
--- Ensure ReplicatedStorage has the save variable
-local function getOrCreateBool(name, default)
-    local storage = game:GetService("ReplicatedStorage")
-    local boolValue = storage:FindFirstChild(name)
+-- Load saved state
+local success, savedState = pcall(function()
+    return farmDataStore:GetAsync(player.UserId)
+end)
 
-    if not boolValue then
-        boolValue = Instance.new("BoolValue")
-        boolValue.Name = name
-        boolValue.Parent = storage
-        boolValue.Value = default
-    end
-
-    return boolValue
-end
-
-local farmState = getOrCreateBool(dataStoreKey, false)
+local farming = success and savedState or false -- Default to false if no saved data
 
 -- UI Setup
 local screenGui = Instance.new("ScreenGui", game.CoreGui)
@@ -51,8 +42,6 @@ statusLabel.Font = Enum.Font.SourceSansBold
 statusLabel.TextSize = 16
 statusLabel.Parent = frame
 
-local farming = farmState.Value
-
 -- Function to Find the Head
 local function findBossHead(boss)
     if not boss then return nil end
@@ -65,7 +54,7 @@ local function findBossHead(boss)
     return nil
 end
 
--- Function to Teleport and Kill Boss
+-- Function to Teleport, Keep Trying Until Boss Dies
 local function teleportAndKillLoop()
     while farming do
         local boss = workspace:FindFirstChild("BadTimeTrioBoss")
@@ -73,20 +62,31 @@ local function teleportAndKillLoop()
         if boss then
             local head = findBossHead(boss)
 
-            if head then
+            while farming and head and boss.Parent do -- Keep checking
                 player.Character:SetPrimaryPartCFrame(head.CFrame) -- Teleport to boss head
                 task.wait(1)
-                head:Destroy() -- Kill boss
+                head:Destroy() -- Try to kill boss
+                task.wait(0.5)
+                boss = workspace:FindFirstChild("BadTimeTrioBoss") -- Recheck boss
+                head = boss and findBossHead(boss) -- Check if head still exists
             end
         end
-        task.wait(1)
+
+        task.wait(1) -- Wait before next check
     end
+end
+
+-- Function to Save Farming State
+local function saveFarmState(state)
+    pcall(function()
+        farmDataStore:SetAsync(player.UserId, state)
+    end)
 end
 
 -- Button Toggle Auto Farm
 button.MouseButton1Click:Connect(function()
     farming = not farming
-    farmState.Value = farming  -- Save state
+    saveFarmState(farming) -- Save new state
 
     if farming then
         button.Text = "DISABLE AUTO FARM"
