@@ -1,13 +1,4 @@
 local player = game.Players.LocalPlayer
-local dataStoreService = game:GetService("DataStoreService")
-local farmDataStore = dataStoreService:GetDataStore("BossFarmState") -- Global save store
-
--- Load saved state
-local success, savedState = pcall(function()
-    return farmDataStore:GetAsync(player.UserId)
-end)
-
-local farming = success and savedState or false -- Default to false if no saved data
 
 -- UI Setup
 local screenGui = Instance.new("ScreenGui", game.CoreGui)
@@ -42,51 +33,48 @@ statusLabel.Font = Enum.Font.SourceSansBold
 statusLabel.TextSize = 16
 statusLabel.Parent = frame
 
+local farming = false
+
+-- Anti-AFK Script
+local vu = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    vu:CaptureController()
+    vu:ClickButton2(Vector2.new())
+end)
+
 -- Function to Find the Head
 local function findBossHead(boss)
-    if not boss then return nil end
+    if not boss then return nil end  -- If boss doesn't exist, return nil
 
     for _, descendant in pairs(boss:GetDescendants()) do
         if descendant:IsA("BasePart") and string.lower(descendant.Name):find("head") then
             return descendant
         end
     end
-    return nil
+    return nil  -- No head found
 end
 
--- Function to Teleport, Keep Trying Until Boss Dies
+-- Function to Teleport, Kill Boss, and Repeat
 local function teleportAndKillLoop()
     while farming do
         local boss = workspace:FindFirstChild("BadTimeTrioBoss")
-
+        
         if boss then
             local head = findBossHead(boss)
 
-            while farming and head and boss.Parent do -- Keep checking
+            if head then
                 player.Character:SetPrimaryPartCFrame(head.CFrame) -- Teleport to boss head
-                task.wait(1)
-                head:Destroy() -- Try to kill boss
-                task.wait(0.5)
-                boss = workspace:FindFirstChild("BadTimeTrioBoss") -- Recheck boss
-                head = boss and findBossHead(boss) -- Check if head still exists
+                task.wait(1) -- Short delay before deleting
+                head:Destroy() -- Kill the boss
             end
         end
-
         task.wait(1) -- Wait before next check
     end
-end
-
--- Function to Save Farming State
-local function saveFarmState(state)
-    pcall(function()
-        farmDataStore:SetAsync(player.UserId, state)
-    end)
 end
 
 -- Button Toggle Auto Farm
 button.MouseButton1Click:Connect(function()
     farming = not farming
-    saveFarmState(farming) -- Save new state
 
     if farming then
         button.Text = "DISABLE AUTO FARM"
@@ -100,7 +88,14 @@ button.MouseButton1Click:Connect(function()
     end
 end)
 
--- Auto-Enable Farming if it was enabled before leaving
-if farming then
+-- Make sure Auto Farm is enabled when you join a new server
+local function autoFarmOnJoin()
+    farming = true
+    button.Text = "DISABLE AUTO FARM"
+    button.BackgroundColor3 = Color3.fromRGB(120, 50, 255) -- Purple Button
+    statusLabel.Text = "Status: Farming"
     task.spawn(teleportAndKillLoop)
 end
+
+-- Trigger auto-farm when joining
+autoFarmOnJoin()
