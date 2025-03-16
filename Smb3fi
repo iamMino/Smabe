@@ -5,6 +5,7 @@ local UIS = game:GetService("UserInputService")
 
 -- UI Setup
 local screenGui = Instance.new("ScreenGui", game.CoreGui)
+screenGui.Name = "AutoFarmUI"
 local frame = Instance.new("Frame", screenGui)
 frame.Size = UDim2.new(0, 250, 0, 130)
 frame.Position = UDim2.new(0.5, -125, 0.2, 0)
@@ -20,7 +21,7 @@ uiGlow.Thickness = 2
 local titleLabel = Instance.new("TextLabel", frame)
 titleLabel.Size = UDim2.new(1, 0, 0.25, 0)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.Text = "AutoFarm Boss"
+titleLabel.Text = "Enable Autofarm"
 titleLabel.TextSize = 18
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.BackgroundTransparency = 1
@@ -28,7 +29,7 @@ titleLabel.TextAlign = Enum.TextXAlignment.Center
 titleLabel.TextStrokeTransparency = 0.5
 
 local startButton = Instance.new("TextButton", frame)
-startButton.Size = UDim2.new(1, 0, 0.3, 0)
+startButton.Size = UDim2.new(1, 0, 0.4, 0)
 startButton.Position = UDim2.new(0, 0, 0.25, 0)
 startButton.Text = "Start"
 startButton.TextSize = 20
@@ -50,7 +51,7 @@ end)
 
 local statusLabel = Instance.new("TextLabel", frame)
 statusLabel.Size = UDim2.new(1, 0, 0.25, 0)
-statusLabel.Position = UDim2.new(0, 0, 0.75, 0)
+statusLabel.Position = UDim2.new(0, 0, 0.65, 0)
 statusLabel.Text = "Status: Inactive"
 statusLabel.TextSize = 16
 statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
