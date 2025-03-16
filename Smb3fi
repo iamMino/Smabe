@@ -1,96 +1,117 @@
 local player = game.Players.LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local workspace = game:GetService("Workspace")
-local UIS = game:GetService("UserInputService")
+local originalPosition = player.Character.HumanoidRootPart.CFrame  -- Store original position
 
 -- UI Setup
 local screenGui = Instance.new("ScreenGui", game.CoreGui)
-screenGui.Name = "AutoFarmUI"
 local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 250, 0, 150)
+frame.Size = UDim2.new(0, 250, 0, 100)
 frame.Position = UDim2.new(0.5, -125, 0.2, 0)
-frame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+frame.BackgroundColor3 = Color3.fromRGB(20, 10, 30) -- Dark Purple Background
 frame.BorderSizePixel = 2
 frame.Active = true
 frame.Draggable = true
 
 local uiGlow = Instance.new("UIStroke", frame)
-uiGlow.Color = Color3.fromRGB(0, 255, 0)
-uiGlow.Thickness = 2
+uiGlow.Color = Color3.fromRGB(100, 50, 255) -- Neon Blue Glow
+uiGlow.Thickness = 3
 
--- Title Label
-local titleLabel = Instance.new("TextLabel", frame)
-titleLabel.Size = UDim2.new(1, 0, 0.25, 0)
-titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.Text = "Enable Autofarm"
-titleLabel.TextSize = 18
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.BackgroundTransparency = 1
-titleLabel.TextAlign = Enum.TextXAlignment.Center
-titleLabel.TextStrokeTransparency = 0.5
+local button = Instance.new("TextButton", frame)
+button.Size = UDim2.new(1, 0, 0.5, 0)
+button.Text = "ENABLE AUTO FARM"
+button.BackgroundColor3 = Color3.fromRGB(50, 50, 150) -- Deep Blue Button
+button.TextColor3 = Color3.fromRGB(180, 100, 255) -- Light Purple Text
+button.Font = Enum.Font.SourceSansBold
+button.TextSize = 18
+button.Parent = frame
 
--- Start/Stop Button
-local startButton = Instance.new("TextButton", frame)
-startButton.Size = UDim2.new(1, 0, 0.4, 0)
-startButton.Position = UDim2.new(0, 0, 0.25, 0)
-startButton.Text = "Start"
-startButton.TextSize = 20
-startButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-startButton.TextColor3 = Color3.fromRGB(0, 0, 0)
-startButton.TextStrokeTransparency = 0.5
-startButton.MouseButton1Click:Connect(function()
-    if not isFarming then
-        isFarming = true
-        startButton.Text = "Stop"
-        -- Start the autofarm
-        autoFarm()
-    else
-        isFarming = false
-        startButton.Text = "Start"
-        -- Stop the autofarm
-    end
+local statusLabel = Instance.new("TextLabel", frame)
+statusLabel.Size = UDim2.new(1, 0, 0.5, 0)
+statusLabel.Position = UDim2.new(0, 0, 0.5, 0)
+statusLabel.Text = "Status: Idle"
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(200, 150, 255) -- Light Purple Text
+statusLabel.Font = Enum.Font.SourceSansBold
+statusLabel.TextSize = 16
+statusLabel.Parent = frame
+
+local farming = false
+
+-- Anti-AFK Script
+local vu = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    vu:CaptureController()
+    vu:ClickButton2(Vector2.new())
 end)
 
--- Status Label
-local statusLabel = Instance.new("TextLabel", frame)
-statusLabel.Size = UDim2.new(1, 0, 0.25, 0)
-statusLabel.Position = UDim2.new(0, 0, 0.65, 0)
-statusLabel.Text = "Status: Inactive"
-statusLabel.TextSize = 16
-statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextAlign = Enum.TextXAlignment.Center
-statusLabel.TextStrokeTransparency = 0.5
+-- Function to Find the Head
+local function findBossHead(boss)
+    if not boss then return nil end  -- If boss doesn't exist, return nil
 
-local isFarming = false
-local originalPosition = player.Character.HumanoidRootPart.CFrame
-
-local function teleportToBoss()
-    -- Teleport logic to the boss
-    local boss = workspace:FindFirstChild("BadTimeTrioBoss")
-    if boss then
-        local head = boss:FindFirstChild("Head")
-        if head then
-            player.Character.HumanoidRootPart.CFrame = head.CFrame
-            -- Destroy head to kill boss
-            head:Destroy()
-            statusLabel.Text = "Status: Boss Killed"
-        else
-            statusLabel.Text = "Status: No Head Found"
+    for _, descendant in pairs(boss:GetDescendants()) do
+        if descendant:IsA("BasePart") and string.lower(descendant.Name):find("head") then
+            return descendant
         end
-    else
-        statusLabel.Text = "Status: Boss Not Found"
+    end
+    return nil  -- No head found
+end
+
+-- Function to Teleport, Kill Boss, and Repeat
+local function teleportAndKillLoop()
+    while farming do
+        local boss = workspace:FindFirstChild("BadTimeTrioBoss")
+        
+        if boss then
+            local head = findBossHead(boss)
+
+            if head then
+                player.Character:SetPrimaryPartCFrame(head.CFrame) -- Teleport to boss head
+                task.wait(1) -- Short delay before deleting
+                head:Destroy() -- Kill the boss
+
+                -- After killing the boss, teleport back to original position
+                player.Character:SetPrimaryPartCFrame(originalPosition) 
+            end
+        end
+        task.wait(1) -- Wait before next check
     end
 end
 
-local function autoFarm()
-    while isFarming do
-        statusLabel.Text = "Status: Farming"
-        teleportToBoss()
-        task.wait(10)  -- Adjust wait time as needed
-        -- Teleport back to original position
-        player.Character.HumanoidRootPart.CFrame = originalPosition
-        task.wait(5)  -- Adjust wait time as needed for the next farm
-    end
-    statusLabel.Text = "Status: Inactive"
+-- Save State to keep the farm enabled after rejoining
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local autoFarmEnabled = replicatedStorage:FindFirstChild("AutoFarmEnabled")
+
+if not autoFarmEnabled then
+    autoFarmEnabled = Instance.new("BoolValue")
+    autoFarmEnabled.Name = "AutoFarmEnabled"
+    autoFarmEnabled.Parent = replicatedStorage
 end
+
+-- Set initial UI state based on saved state
+if autoFarmEnabled.Value then
+    farming = true
+    button.Text = "DISABLE AUTO FARM"
+    button.BackgroundColor3 = Color3.fromRGB(120, 50, 255) -- Purple Button
+    statusLabel.Text = "Status: Farming"
+else
+    farming = false
+    button.Text = "ENABLE AUTO FARM"
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 150) -- Deep Blue Button
+    statusLabel.Text = "Status: Idle"
+end
+
+-- Button Toggle Auto Farm
+button.MouseButton1Click:Connect(function()
+    farming = not farming
+    autoFarmEnabled.Value = farming  -- Save state when toggled
+
+    if farming then
+        button.Text = "DISABLE AUTO FARM"
+        button.BackgroundColor3 = Color3.fromRGB(120, 50, 255) -- Purple Button
+        statusLabel.Text = "Status: Farming"
+        task.spawn(teleportAndKillLoop)
+    else
+        button.Text = "ENABLE AUTO FARM"
+        button.BackgroundColor3 = Color3.fromRGB(50, 50, 150) -- Deep Blue Button
+        statusLabel.Text = "Status: Idle"
+    end
+end)
